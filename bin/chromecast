@@ -28,24 +28,51 @@ var discover = subparsers.addParser('discover', {
   description: 'List and show various information on Google Chromecast present on the network.'
 });
 
+function addHostAndPort(item) {
+  item
+    .addArgument(['host'], {
+      help: 'Chromecast IP address',
+      metadata: 'HOST'
+    });
+  item
+    .addArgument(['-p', '--port'], {
+      help: 'Chromecast port',
+      metadata: 'PORT',
+      defaultValue: 8009
+    });
+}
+
 // ping command
 var ping = subparsers.addParser('ping', {
   help: 'ping a Chromecast device',
   description: 'ping a Chromecast device'
 });
-ping
-  .addArgument(['host'], {
-    help: 'Chromecast IP address',
-    metadata: 'HOST'
-  });
-ping
-  .addArgument(['-p', '--port'], {
-    help: 'Chromecast port',
-    metadata: 'PORT',
-    defaultValue: 8009
-  });
+addHostAndPort(ping);
+
+// status command
+var status = subparsers.addParser('status', {
+  help: 'status of a Chromecast device',
+  description: 'get status from a Chromecast device'
+});
+addHostAndPort(status);
 
 var args = parser.parseArgs();
+
+function getChromecast() {
+  var c = new nodecastor.Chromecast({ address: args.host,
+                                      port: args.port,
+                                      debug: args.debug });
+  c
+    .once('error', function(err) {
+      console.warn('Error received', util.inspect(err));
+      process.exit(1);
+    })
+    .once('end', function() {
+      console.warn('Got disconnected from device');
+      process.exit(1);
+    });
+  return c;
+}
 
 switch (args.command) {
 case 'discover':
@@ -61,19 +88,22 @@ case 'discover':
   break;
 
 case 'ping':
-  var c = new nodecastor.Chromecast({ address: args.host,
-                                      port: args.port,
-                                      debug: args.debug });
-  c
+  var c1 = getChromecast();
+  c1
     .once('pong', function() {
       console.log('PONG received');
       process.exit(0);
-    })
-    .once('error', function(err) {
-      console.warn('Error received', util.inspect(err));
-      process.exit(1);
     });
 
-  c.ping();
+  c1.ping();
   break;
+
+case 'status':
+  var c2 = getChromecast();
+  c2
+    .once('status', function(status) {
+      console.log('Status received', util.inspect(status));
+      process.exit(0);
+    });
+  c2.status();
 }
