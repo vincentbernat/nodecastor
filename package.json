@@ -1,0 +1,28 @@
+{
+  "name": "nodecastor",
+  "version": "0.0.1",
+  "description": "Node interface to ChromeCast",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/vincentbernat/nodecastor.git"
+  },
+  "keywords": [
+    "google",
+    "chromecast"
+  ],
+  "author": "Vincent Bernat",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vincentbernat/nodecastor/issues"
+  },
+  "dependencies": {
+    "argparse": "^0.1.15",
+    "protobufjs": "^2.0.5",
+    "mdns2": "^2.1.0",
+    "lodash": "^2.4.1"
+  },
+  "bin": {
+    "chromecast": "./bin/chromecast"
+  }
+}

@@ -1,0 +1,79 @@
+#!/usr/bin/env node
+'use strict';
+
+process.env['AVAHI_COMPAT_NOWARN'] = 1;
+
+var util = require('util'),
+    nodecastor = require('..'),
+    pjson = require('../package.json'),
+    ArgumentParser = require('argparse').ArgumentParser,
+    parser = new ArgumentParser({
+      version: pjson.version,
+      description: 'Discover and interact with Google Chromecast devices.'
+    });
+
+parser
+  .addArgument(['-d', '--debug'], {
+    help: 'enable debugging',
+    action: 'storeTrue'
+  });
+
+var subparsers = parser.addSubparsers({
+  dest: 'command'
+});
+
+// discover command
+var discover = subparsers.addParser('discover', {
+  help: 'discover Chromecast devices on the network',
+  description: 'List and show various information on Google Chromecast present on the network.'
+});
+
+// ping command
+var ping = subparsers.addParser('ping', {
+  help: 'ping a Chromecast device',
+  description: 'ping a Chromecast device'
+});
+ping
+  .addArgument(['host'], {
+    help: 'Chromecast IP address',
+    metadata: 'HOST'
+  });
+ping
+  .addArgument(['-p', '--port'], {
+    help: 'Chromecast port',
+    metadata: 'PORT',
+    defaultValue: 8009
+  });
+
+var args = parser.parseArgs();
+
+switch (args.command) {
+case 'discover':
+  var d = nodecastor.discover();
+  d
+    .on('connected', function(device) {
+      console.log('+ %s (%s:%d)', device.name, device.address, device.port);
+    })
+    .on('disconnected', function(device) {
+      console.log('- %s (%s:%d)', device.name, device.address, device.port);
+    })
+    .start();
+  break;
+
+case 'ping':
+  var c = new nodecastor.Chromecast({ address: args.host,
+                                      port: args.port,
+                                      debug: args.debug });
+  c
+    .once('pong', function() {
+      console.log('PONG received');
+      process.exit(0);
+    })
+    .once('error', function(err) {
+      console.warn('Error received', util.inspect(err));
+      process.exit(1);
+    });
+
+  c.ping();
+  break;
+}
