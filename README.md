@@ -13,11 +13,13 @@ This library doesn't support the DIAL discovery protocol. See
 [1]: https://plus.google.com/+SebastianMauer/posts/83hTniKEDwN
 [nodecast]: https://github.com/wearefractal/nodecast
 
-## Install
+# Install
 
 Install the library with `npm install nodecastor`.
 
-## Usage
+# Usage
+
+## Library
 
 Here is a simple usage of this library
 
@@ -43,8 +45,12 @@ delegates this to the libc. You should have something like that in
 
     hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4
 
-
 ## Command-line helper
 
 The functionality of this library can be tested with the `chromecast`
 helper. Invoke it with `chromecast -h` to get help.
+
+# Protocol description
+
+There is no formal description of the protocol. However, you can look
+at `channel.js` which shows how to build messages, layer by layer.
