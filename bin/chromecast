@@ -56,6 +56,13 @@ var status = subparsers.addParser('status', {
 });
 addHostAndPort(status);
 
+// watch command
+var watch = subparsers.addParser('watch', {
+  help: 'watch a Chromecast device',
+  description: 'watch and display any event hapenning on a Chromecast device'
+});
+addHostAndPort(watch);
+
 var args = parser.parseArgs();
 
 function getChromecast() {
@@ -106,4 +113,14 @@ case 'status':
       c2.disconnect();
     });
   c2.status();
+  break;
+
+case 'watch':
+  var c3 = getChromecast();
+  c3
+    .on('message', function(message) {
+      console.log('Message received:', util.inspect(message));
+    });
+  break;
+
 }
