@@ -87,7 +87,7 @@ function getChromecast() {
     })
     .once('disconnect', function() {
       console.warn('Got disconnected from device');
-      process.exit(1);
+      process.exit(0);
     });
   return c;
 }
