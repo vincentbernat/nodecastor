@@ -19,6 +19,9 @@ Install the library with `npm install nodecastor`.
 
 # Usage
 
+This is still a work in progress. The API is not stable, the quality
+is pretty low and there are a lot of bugs.
+
 ## Library
 
 Here is a simple usage of this library
