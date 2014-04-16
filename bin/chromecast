@@ -109,7 +109,7 @@ case 'status':
   var c2 = getChromecast();
   c2
     .once('status', function(status) {
-      console.log('Status received', util.inspect(status));
+      console.log('Status received:', util.inspect(status));
       c2.disconnect();
     });
   c2.status();
