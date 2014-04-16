@@ -63,6 +63,17 @@ var watch = subparsers.addParser('watch', {
 });
 addHostAndPort(watch);
 
+// Run an app
+var run = subparsers.addParser('run', {
+  help: 'run an application',
+  description: 'run the provided application on a Chromecast device'
+});
+addHostAndPort(run);
+run.addArgument(['app'], {
+  help: 'application ID',
+  metadata: 'APPID'
+});
+
 var args = parser.parseArgs();
 
 function getChromecast() {
@@ -121,6 +132,12 @@ case 'watch':
     .on('message', function(message) {
       console.log('Message received:', util.inspect(message));
     });
+  break;
+
+case 'run':
+  var c4 = getChromecast();
+  c4.run(args.app);
+  c4.disconnect();
   break;
 
 }
