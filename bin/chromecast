@@ -4,6 +4,7 @@
 process.env['AVAHI_COMPAT_NOWARN'] = 1;
 
 var util = require('util'),
+    _ = require('lodash'),
     nodecastor = require('..'),
     pjson = require('../package.json'),
     ArgumentParser = require('argparse').ArgumentParser,
@@ -32,12 +33,12 @@ function addHostAndPort(item) {
   item
     .addArgument(['host'], {
       help: 'Chromecast IP address',
-      metadata: 'HOST'
+      metavar: 'HOST'
     });
   item
     .addArgument(['-p', '--port'], {
       help: 'Chromecast port',
-      metadata: 'PORT',
+      metavar: 'PORT',
       defaultValue: 8009
     });
 }
@@ -62,6 +63,11 @@ var watch = subparsers.addParser('watch', {
   description: 'watch and display any event hapenning on a Chromecast device'
 });
 addHostAndPort(watch);
+watch.addArgument(['app'], {
+  help: 'application ID',
+  nargs: '?',
+  metavar: 'APPID'
+});
 
 // Run an app
 var run = subparsers.addParser('run', {
@@ -71,7 +77,7 @@ var run = subparsers.addParser('run', {
 addHostAndPort(run);
 run.addArgument(['app'], {
   help: 'application ID',
-  metadata: 'APPID'
+  metavar: 'APPID'
 });
 
 var args = parser.parseArgs();
@@ -128,9 +134,32 @@ case 'status':
 
 case 'watch':
   var c3 = getChromecast();
+  if (args.app) {
+    c3.status();
+    c3.once('status', function(status) {
+      if (status.applications.length === 0) {
+        console.log('No application running');
+        c3.disconnect();
+      } else {
+        var app = _.find(status.applications, { appId: args.app });
+        if (typeof app === 'undefined') {
+          console.log('Application not found');
+          c3.disconnect();
+        } else {
+          c3.stream.write({
+            namespace: 'urn:x-cast:com.google.cast.tp.connection',
+            destination: app.transportId,
+            data: { type: 'CONNECT',
+                    origin: {} }
+          });
+          c3.status();
+        }
+      }
+    });
+  }
   c3
     .on('message', function(message) {
-      console.log('Message received:', util.inspect(message));
+      console.log('Message received:', util.inspect(message, { depth: null }));
     });
   break;
 
