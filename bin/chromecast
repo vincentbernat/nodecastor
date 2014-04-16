@@ -67,7 +67,7 @@ function getChromecast() {
       console.warn('Error received', util.inspect(err));
       process.exit(1);
     })
-    .once('end', function() {
+    .once('disconnect', function() {
       console.warn('Got disconnected from device');
       process.exit(1);
     });
@@ -92,7 +92,7 @@ case 'ping':
   c1
     .once('pong', function() {
       console.log('PONG received');
-      process.exit(0);
+      c1.disconnect();
     });
 
   c1.ping();
@@ -103,7 +103,7 @@ case 'status':
   c2
     .once('status', function(status) {
       console.log('Status received', util.inspect(status));
-      process.exit(0);
+      c2.disconnect();
     });
   c2.status();
 }
