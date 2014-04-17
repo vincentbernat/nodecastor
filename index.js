@@ -1,9 +1,9 @@
 'use strict';
 
 var nodecastor = module.exports = {
-  discover: function() {
-    return new nodecastor.Discoverer();
+  scan: function() {
+    return new nodecastor.Scanner();
   },
-  Discoverer: require('./lib/discover'),
+  Scanner: require('./lib/scanner'),
   Chromecast: require('./lib/chromecast')
 };

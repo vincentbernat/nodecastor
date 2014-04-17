@@ -100,13 +100,12 @@ function getChromecast() {
 
 switch (args.command) {
 case 'discover':
-  var d = nodecastor.discover();
-  d
+  nodecastor.scan()
     .on('connected', function(device) {
-      console.log('+ %s (%s:%d)', device.name, device.address, device.port);
+      console.log('+ %s (%s:%d)', device.friendlyName, device.address, device.port);
     })
     .on('disconnected', function(device) {
-      console.log('- %s (%s:%d)', device.name, device.address, device.port);
+      console.log('- %s (%s:%d)', device.friendlyName, device.address, device.port);
     })
     .start();
   break;
