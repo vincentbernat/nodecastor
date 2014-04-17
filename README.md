@@ -27,18 +27,15 @@ is pretty low and there are a lot of bugs.
 Here is a simple usage of this library
 
 ```javascript
-var nodecastor = require('nodecastor'),
-    d = nodecastor.discover();
+var nodecastor = require('nodecastor');
 
-d.on('device', function(device) {
+nodecastor.scan().on('device', function(d) {
   d.ping();
   d.once('pong', function() {
     console.log('PONG!');
     process.exit(0);
   });
-}
-
-d.start();
+}).start();
 ```
 
 On Linux, if no device is discovered, first check that your machine is
