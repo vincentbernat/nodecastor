@@ -78,6 +78,18 @@ run.addArgument(['namespace'], {
   metavar: 'NS'
 });
 
+// Use hello app
+var hello = subparsers.addParser('hello', {
+  help: 'display some arbitrary text',
+  description: 'use the HelloText receiver to display some text'
+});
+addHostAndPort(hello);
+hello.addArgument(['text'], {
+  help: 'text to display',
+  metavar: 'TEXT',
+  nargs: '+'
+});
+
 var args = parser.parseArgs();
 
 // Logging
@@ -179,4 +191,34 @@ case 'run':
   });
   break;
 
+case 'hello':
+  var c5 = getChromecast();
+  var applicationID = '794B7BBF';
+  var namespace = 'urn:x-cast:com.google.cast.sample.helloworld';
+  c5.application(applicationID, function(err, app) {
+    if (err) {
+      logger.error('Unable to find HelloText application:', err.message);
+      c5.stop();
+    } else {
+      app.run(namespace, function(err, session) {
+        if (err) {
+          logger.error('Unable to start HelloText application:', err.message);
+          c5.stop();
+        } else {
+          session.send(args.text.join(' '), function(err, message) {
+            if (err) {
+              logger.error('Unable to send hello message:', err.message);
+              c5.stop();
+            } else {
+              logger.info('Message delivered:', message);
+              setTimeout(function() {
+                c5.stop();
+              }, 10000);
+            }
+          });
+        }
+      });
+    }
+  });
+  break;
 }

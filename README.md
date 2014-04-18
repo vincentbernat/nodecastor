@@ -138,7 +138,8 @@ var c = new CastDevice({
 ## Command-line helper
 
 The functionality of this library can be tested with the `chromecast`
-helper. Invoke it with `chromecast -h` to get help.
+helper. Invoke it with `chromecast -h` to get help. It embeds some
+simple examples too.
 
 # Protocol description
 
