@@ -24,12 +24,6 @@ var subparsers = parser.addSubparsers({
   dest: 'command'
 });
 
-// discover command
-var discover = subparsers.addParser('discover', {
-  help: 'discover Chromecast devices on the network',
-  description: 'List and show various information on Google Chromecast present on the network.'
-});
-
 function addHostAndPort(item) {
   item
     .addArgument(['host'], {
@@ -44,51 +38,176 @@ function addHostAndPort(item) {
     });
 }
 
-// status command
-var status = subparsers.addParser('status', {
-  help: 'status of a Chromecast device',
-  description: 'get status from a Chromecast device'
-});
-addHostAndPort(status);
+var subcommands = {
 
-// watch command
-var watch = subparsers.addParser('watch', {
-  help: 'watch a Chromecast device',
-  description: 'watch and display any event hapenning on a Chromecast device'
-});
-addHostAndPort(watch);
-watch.addArgument(['app'], {
-  help: 'application ID',
-  nargs: '?',
-  metavar: 'APPID'
-});
+  // discover command
+  discover: (function() {
+    var discover = subparsers.addParser('discover', {
+      help: 'discover Chromecast devices on the network',
+      description: 'List and show various information on Google Chromecast present on the network.'
+    });
 
-// Run an app
-var run = subparsers.addParser('run', {
-  help: 'run an application',
-  description: 'run the provided application on a Chromecast device'
-});
-addHostAndPort(run);
-run.addArgument(['app'], {
-  help: 'application ID',
-  metavar: 'APPID'
-});
-run.addArgument(['--namespace'], {
-  help: 'namespace to use when running the application',
-  metavar: 'NS'
-});
+    return function(args) {
+      nodecastor.scan({ logger: logger })
+        .on('online', function(device) {
+          logger.info('+ %s (%s:%d)', device.friendlyName, device.address, device.port);
+        })
+        .on('offline', function(device) {
+          logger.info('- %s (%s:%d)', device.friendlyName, device.address, device.port);
+        })
+        .start();
+    };
+  })(),
 
-// Use hello app
-var hello = subparsers.addParser('hello', {
-  help: 'display some arbitrary text',
-  description: 'use the HelloText receiver to display some text'
-});
-addHostAndPort(hello);
-hello.addArgument(['text'], {
-  help: 'text to display',
-  metavar: 'TEXT',
-  nargs: '+'
-});
+  // status command
+  status: (function() {
+    var status = subparsers.addParser('status', {
+      help: 'status of a Chromecast device',
+      description: 'get status from a Chromecast device'
+    });
+    addHostAndPort(status);
+
+    return function(args) {
+      var c = getChromecast();
+      c.status(function(err, status) {
+        if (err) {
+          logger.error('Unable to get status:', err.message);
+        } else {
+          logger.info('Status received:', status);
+        }
+        c.stop();
+      });
+    };
+  })(),
+
+  // watch command
+  watch: (function() {
+    var watch = subparsers.addParser('watch', {
+      help: 'watch a Chromecast device',
+      description: 'watch and display any event hapenning on a Chromecast device'
+    });
+    addHostAndPort(watch);
+    watch.addArgument(['app'], {
+      help: 'application ID',
+      nargs: '?',
+      metavar: 'APPID'
+    });
+
+    return function(args) {
+      var c = getChromecast();
+      if (args.app) {
+        c.application(args.app, function(err, app) {
+          if (err) {
+            logger.error('Unable to get application:', err.message);
+            c.stop();
+            return;
+          }
+          app.run(null, function(err, session) {
+            if (err) {
+              logger.error('Unable to start application:', err.message);
+              c.stop();
+              return;
+            }
+            session.on('message', function(message) {
+              logger.info('Session message received:', message);
+            });
+          });
+        });
+      } else {
+        c.on('message', function(message) {
+          logger.info('Message received:', message);
+        });
+      }
+    };
+  })(),
+
+  // Run an app
+  run: (function() {
+    var run = subparsers.addParser('run', {
+      help: 'run an application',
+      description: 'run the provided application on a Chromecast device'
+    });
+    addHostAndPort(run);
+    run.addArgument(['app'], {
+      help: 'application ID',
+      metavar: 'APPID'
+    });
+    run.addArgument(['--namespace'], {
+      help: 'namespace to use when running the application',
+      metavar: 'NS'
+    });
+
+    return function(args) {
+      var c = getChromecast();
+      c.application(args.app, function(err, app) {
+        if (err) {
+          logger.error('Unable to get application:', err.message);
+          c.stop();
+        } else {
+          if (args.namespace) {
+            app.run(args.namespace, function(err, session) {
+              if (err) {
+                logger.error('Unable to start application:', err.message);
+              } else {
+                session.stop();
+              }
+              c.stop();
+            });
+          } else {
+            app.run(null);
+            c.stop();
+          }
+        }
+      });
+    };
+  })(),
+
+  // Use hello app
+  hello: (function() {
+    var hello = subparsers.addParser('hello', {
+      help: 'display some arbitrary text',
+      description: 'use the HelloText receiver to display some text'
+    });
+    addHostAndPort(hello);
+    hello.addArgument(['text'], {
+      help: 'text to display',
+      metavar: 'TEXT',
+      nargs: '+'
+    });
+
+    return function() {
+      var c = getChromecast();
+      var applicationID = '794B7BBF';
+      var namespace = 'urn:x-cast:com.google.cast.sample.helloworld';
+      c.application(applicationID, function(err, app) {
+        if (err) {
+          logger.error('Unable to find HelloText application:', err.message);
+          c.stop();
+        } else {
+          app.run(namespace, function(err, session) {
+            if (err) {
+              logger.error('Unable to start HelloText application:', err.message);
+              c.stop();
+            } else {
+              session.send(args.text.join(' '), function(err, message) {
+                if (err) {
+                  logger.error('Unable to send hello message:', err.message);
+                  c.stop();
+                } else {
+                  logger.info('Message delivered:', message);
+                  setTimeout(function() {
+                    c.stop();
+                  }, 10000);
+                }
+              });
+            }
+          });
+        }
+      });
+    };
+
+  })()
+};
 
 var args = parser.parseArgs();
 
@@ -121,109 +240,4 @@ function getChromecast() {
   return c;
 }
 
-switch (args.command) {
-case 'discover':
-  nodecastor.scan({ logger: logger })
-    .on('online', function(device) {
-      logger.info('+ %s (%s:%d)', device.friendlyName, device.address, device.port);
-    })
-    .on('offline', function(device) {
-      logger.info('- %s (%s:%d)', device.friendlyName, device.address, device.port);
-    })
-    .start();
-  break;
-
-case 'status':
-  var c2 = getChromecast();
-  c2.status(function(err, status) {
-    if (err) {
-      logger.error('Unable to get status:', err.message);
-    } else {
-      logger.info('Status received:', status);
-    }
-    c2.stop();
-  });
-  break;
-
-case 'watch':
-  var c3 = getChromecast();
-  if (args.app) {
-    c3.application(args.app, function(err, app) {
-      if (err) {
-        logger.error('Unable to get application:', err.message);
-        c3.stop();
-        return;
-      }
-      app.run(null, function(err, session) {
-        if (err) {
-          logger.error('Unable to start application:', err.message);
-          c3.stop();
-          return;
-        }
-        session.on('message', function(message) {
-          logger.info('Session message received:', message);
-        });
-      });
-    });
-  } else {
-    c3.on('message', function(message) {
-      logger.info('Message received:', message);
-    });
-  }
-  break;
-
-case 'run':
-  var c4 = getChromecast();
-  c4.application(args.app, function(err, app) {
-    if (err) {
-      logger.error('Unable to get application:', err.message);
-      c4.stop();
-    } else {
-      if (args.namespace) {
-        app.run(args.namespace, function(err, session) {
-          if (err) {
-            logger.error('Unable to start application:', err.message);
-          } else {
-            session.stop();
-          }
-          c4.stop();
-        });
-      } else {
-        app.run(null);
-        c4.stop();
-      }
-    }
-  });
-  break;
-
-case 'hello':
-  var c5 = getChromecast();
-  var applicationID = '794B7BBF';
-  var namespace = 'urn:x-cast:com.google.cast.sample.helloworld';
-  c5.application(applicationID, function(err, app) {
-    if (err) {
-      logger.error('Unable to find HelloText application:', err.message);
-      c5.stop();
-    } else {
-      app.run(namespace, function(err, session) {
-        if (err) {
-          logger.error('Unable to start HelloText application:', err.message);
-          c5.stop();
-        } else {
-          session.send(args.text.join(' '), function(err, message) {
-            if (err) {
-              logger.error('Unable to send hello message:', err.message);
-              c5.stop();
-            } else {
-              logger.info('Message delivered:', message);
-              setTimeout(function() {
-                c5.stop();
-              }, 10000);
-            }
-          });
-        }
-      });
-    }
-  });
-  break;
-}
+subcommands[args.command](args);
