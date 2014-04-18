@@ -141,6 +141,15 @@ The functionality of this library can be tested with the `chromecast`
 helper. Invoke it with `chromecast -h` to get help. It embeds some
 simple examples too.
 
+The Tic Tac Toe application is quite incomplete. It is expected to
+play against a human player. Here is how to use it:
+
+ 1. Download the [Chrome version from GitHub](https://github.com/googlecast/Cast-TicTacToe-chrome)
+ 2. Direct a browser to it (`python -mSimpleHTTPServer` if you want a quick way to get a webserver to serve the files)
+ 3. Start casting the application from Chrome.
+ 4. Starts `chromecast tictactoe 192.168.1.24`.
+ 5. On Chrome, click play.
+
 # Protocol description
 
 There is no formal description of the protocol. However, you can look
