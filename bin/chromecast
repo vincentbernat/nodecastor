@@ -111,7 +111,7 @@ function getChromecast() {
                                       logger: logger });
   c
     .once('error', function(err) {
-      logger.warn('Error received:', err.message);
+      logger.warn('Error received:', err);
       process.exit(1);
     })
     .once('disconnect', function() {
