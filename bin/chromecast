@@ -50,10 +50,16 @@ var subcommands = {
     return function(args) {
       nodecastor.scan({ logger: logger })
         .on('online', function(device) {
-          logger.info('+ %s (%s:%d)', device.friendlyName, device.address, device.port);
+          logger.info('+ %s (%s:%d) [%s]',
+                      device.friendlyName,
+                      device.address, device.port,
+                      device.id);
         })
         .on('offline', function(device) {
-          logger.info('- %s (%s:%d)', device.friendlyName, device.address, device.port);
+          logger.info('- %s (%s:%d) [%s]',
+                      device.friendlyName,
+                      device.address, device.port,
+                      device.id);
         })
         .start();
     };
