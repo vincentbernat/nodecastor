@@ -175,7 +175,7 @@ var subcommands = {
       nargs: '+'
     });
 
-    return function() {
+    return function(args) {
       var c = getChromecast();
       var applicationID = '794B7BBF';
       var namespace = 'urn:x-cast:com.google.cast.sample.helloworld';
@@ -205,7 +205,78 @@ var subcommands = {
         }
       });
     };
+  })(),
 
+  // Tic Tac Toe
+  tictactoe: (function() {
+    var tictactoe = subparsers.addParser('tictactoe', {
+      help: 'join a Tic Tac Toe game',
+      description: 'join an existing Tic Tac Toe game and play random moves'
+    });
+    addHostAndPort(tictactoe);
+
+    return function(args) {
+      var c = getChromecast(),
+          applicationID = 'BFEBD3F1',
+          namespace = 'urn:x-cast:com.google.cast.demo.tictactoe',
+          board = [],
+          player;
+      c.application(applicationID, function(err, app) {
+        if (err) {
+          logger.error('Unable to find TicTacToe application:', err.message);
+          c.stop();
+          return;
+        }
+        app.join(namespace, function(err, session) {
+          logger.info('Found the game!');
+          session.on('message', function(message) {
+            switch (message.event) {
+            case 'error':
+              logger.error('An error occurred:', message.message);
+              c.stop();
+              break;
+            case 'joined':
+              // Get the layout
+              player = message.player;
+              session.send({ command: 'board_layout_request' });
+              break;
+            case 'board_layout_response':
+              board = message.board;
+              break;
+            case 'moved':
+              if (message.game_over) {
+                logger.info('Game is over.');
+                c.stop();
+                break;
+              }
+              if (message.player === player) {
+                // It's us, do nothing
+                break;
+              };
+              board[message.row + message.column*3] = message.player;
+              // Which moves are available?
+              var next = _.filter(_.shuffle(_.map(board, function(v, idx) {
+                if (v === 0) return idx;
+                return null;
+              })), null)[0];
+              var row = next % 3,
+                  col = Math.floor(next / 3);
+              logger.info('I will move to:', row, col);
+              session.send({
+                command: 'move',
+                row: row,
+                column: col
+              });
+              break;
+            }
+          });
+          session.send({
+            command: 'join',
+            name: 'nodecastor'
+          });
+        });
+      });
+    };
   })()
 };
 
