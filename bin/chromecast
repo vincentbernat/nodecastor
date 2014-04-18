@@ -73,7 +73,7 @@ run.addArgument(['app'], {
   help: 'application ID',
   metavar: 'APPID'
 });
-run.addArgument(['namespace'], {
+run.addArgument(['--namespace'], {
   help: 'namespace to use when running the application',
   metavar: 'NS'
 });
@@ -179,14 +179,19 @@ case 'run':
       logger.error('Unable to get application:', err.message);
       c4.stop();
     } else {
-      app.run(args.namespace, function(err, session) {
-        if (err) {
-          logger.error('Unable to start application:', err.message);
-        } else {
-          session.stop();
-        }
+      if (args.namespace) {
+        app.run(args.namespace, function(err, session) {
+          if (err) {
+            logger.error('Unable to start application:', err.message);
+          } else {
+            session.stop();
+          }
+          c4.stop();
+        });
+      } else {
+        app.run(null);
         c4.stop();
-      });
+      }
     }
   });
   break;
