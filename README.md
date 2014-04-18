@@ -24,19 +24,21 @@ is pretty low and there are a lot of bugs.
 
 ## Library
 
-Here is a simple usage of this library
+To use the library, you first need to discover what Chromecast devices
+are available on the network. This is an optional step as you can also
+declare a Chromecast manually from its IP address.
 
 ```javascript
 var nodecastor = require('nodecastor');
-
-nodecastor.scan().on('device', function(d) {
-  d.ping();
-  d.once('pong', function() {
-    console.log('PONG!');
-    process.exit(0);
+nodecastor.scan()
+  .on('online', function(d) {
+    console.log('New device', util.inspect(d));
+  })
+  .on('offline', function(d) {
+    console.log('Removed device', util.inspect(d));
   });
-}).start();
 ```
+
 
 On Linux, if no device is discovered, first check that your machine is
 able to do mDNS address resolution. The library used for this purpose
@@ -44,6 +46,94 @@ delegates this to the libc. You should have something like that in
 `/etc/nsswitch.conf`:
 
     hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4
+
+Both `online` and `offline` events will invoke the callback with a
+`CastDevice` instance. You can also create the `CastDevice` instance
+manually:
+
+```javascript
+nodecastor.CastDevice({
+      friendlyName: 'My secret Chromecast',
+      address: '192.168.1.27',
+      port: 8009
+});
+```
+
+Once you have a `CastDevice` instance, you can request some
+informations about it:
+
+```javascript
+d.status(function(err, s) {
+  if (!err) {
+    console.log('Chromecast status', util.inspect(s));
+  }
+});
+```
+
+You can also request an application. This will give you a
+`CastApplication` instance.
+
+```javascript
+d.application('YouTube', function(err, a) {
+  if (!err) {
+    console.log('YouTube application', util.inspect(a));
+  }
+});
+```
+
+Once you have a `CastApplication` instance, you can request a
+`CastSession` instance for this application. For that, you can either
+join an existing application (which should already be running) or you
+can run a new instance.
+
+```javascript
+a.run('urn:x-cast:com.google.cast.demo.tictactoe', function(err, s) {
+  if (!err) {
+    console.log('Got a session', util.inspect(s));
+  }
+});
+a.join('urn:x-cast:com.google.cast.demo.tictactoe', function(err, s) {
+  if (!err) {
+    console.log('Joined a session', util.inspect(s));
+  }
+});
+```
+
+The first parameter is the namespace you expect to run or join. Any
+messages sent on this session will use the given namespace.
+
+You can then send messages and receive answers (not all messages have
+to be answered):
+
+```javascript
+s.send({ data: 'hello' }, function(err, data) {
+  if (!err) {
+    console.log('Got an answer!', util.inspect(data));
+  }
+});
+s.on('message', function(data) {
+  console.log('Got an unexpected message', util.inspect(data));
+});
+```
+
+Don't use callbacks for messages that you don't expect answers
+for. They will just leak memory...
+
+A `CastSession` object can emit a `close` event when the connection is
+closed. A `CastDevice` object can emit a `disconnect` event when the
+connection with the device is lost and a `connect` event when the
+connection has been established (but there is no need to wait for such
+an event). You can stop a session with `.stop()` or close connection
+to a device with `.stop()`.
+
+Any object can take as an option a logger. For example:
+
+```javascript
+var c = new CastDevice({
+  address: '192.168.1.27',
+  logger: console
+});
+```
 
 ## Command-line helper
 
@@ -53,4 +143,28 @@ helper. Invoke it with `chromecast -h` to get help.
 # Protocol description
 
 There is no formal description of the protocol. However, you can look
-at `channel.js` which shows how to build messages, layer by layer.
+at `channel.js` which shows how to build low-level messages, layer by
+layer. The lower-level protocol is implemented directly in Chrome and
+the protocol is described in `cast_channel.proto`.
+
+The high-level protocol, used by the Chromecast extension, can be
+discovered by modifying the extension. The following code can be
+appended to `background_script.js`:
+
+```javascript
+chromesendAndLog = function(channel, data) {
+  console.log('[TAP CHROMECAST send]', data);
+  return chrome.cast.channel.send.apply(chrome.cast.channel, arguments);
+};
+chrome.cast.channel.onMessage.addListener(function(channel, data) {
+  console.log('[TAP CHROMECAST recv]', data);
+});
+```
+
+Any occurrence of `chrome.cast.channel.send` needs to be replaced by
+`chromesendAndLog`. Monkey-patching seems to be ineffective because
+the whole `chrome.cast.channel` seems to be erased everytime you
+connect/disconnect to a Chromecast. Then, filter the log messages with
+`TAP CHROMECAST` in Chrome developper tools (click on
+`background.html` for the Chromecast extension in
+`chrome://extensions`).

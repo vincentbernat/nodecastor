@@ -20,7 +20,8 @@
     "argparse": "^0.1.15",
     "protobufjs": "^2.0.5",
     "mdns2": "^2.1.0",
-    "lodash": "^2.4.1"
+    "lodash": "^2.4.1",
+    "winston": "^0.7.3"
   },
   "bin": {
     "chromecast": "./bin/chromecast"

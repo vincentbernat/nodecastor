@@ -4,6 +4,7 @@
 process.env['AVAHI_COMPAT_NOWARN'] = 1;
 
 var util = require('util'),
+    winston = require('winston'),
     _ = require('lodash'),
     nodecastor = require('..'),
     pjson = require('../package.json'),
@@ -43,13 +44,6 @@ function addHostAndPort(item) {
     });
 }
 
-// ping command
-var ping = subparsers.addParser('ping', {
-  help: 'ping a Chromecast device',
-  description: 'ping a Chromecast device'
-});
-addHostAndPort(ping);
-
 // status command
 var status = subparsers.addParser('status', {
   help: 'status of a Chromecast device',
@@ -79,20 +73,37 @@ run.addArgument(['app'], {
   help: 'application ID',
   metavar: 'APPID'
 });
+run.addArgument(['namespace'], {
+  help: 'namespace to use when running the application',
+  metavar: 'NS'
+});
 
 var args = parser.parseArgs();
 
+// Logging
+var logger = new winston.Logger({
+  transports: [
+    new winston.transports.Console({
+      prettyPrint: true,
+      colorize: true,
+      silent: false,
+      timestamp: false,
+      level: args.debug?'debug':'info'
+    })
+  ]
+});
+
 function getChromecast() {
-  var c = new nodecastor.Chromecast({ address: args.host,
+  var c = new nodecastor.CastDevice({ address: args.host,
                                       port: args.port,
-                                      debug: args.debug });
+                                      logger: logger });
   c
     .once('error', function(err) {
-      console.warn('Error received', util.inspect(err));
+      logger.warn('Error received:', err.message);
       process.exit(1);
     })
     .once('disconnect', function() {
-      console.warn('Got disconnected from device');
+      logger.warn('Got disconnected from device');
       process.exit(0);
     });
   return c;
@@ -100,72 +111,72 @@ function getChromecast() {
 
 switch (args.command) {
 case 'discover':
-  nodecastor.scan()
-    .on('connected', function(device) {
-      console.log('+ %s (%s:%d)', device.friendlyName, device.address, device.port);
+  nodecastor.scan({ logger: logger })
+    .on('online', function(device) {
+      logger.info('+ %s (%s:%d)', device.friendlyName, device.address, device.port);
     })
-    .on('disconnected', function(device) {
-      console.log('- %s (%s:%d)', device.friendlyName, device.address, device.port);
+    .on('offline', function(device) {
+      logger.info('- %s (%s:%d)', device.friendlyName, device.address, device.port);
     })
     .start();
   break;
 
-case 'ping':
-  var c1 = getChromecast();
-  c1
-    .once('pong', function() {
-      console.log('PONG received');
-      c1.disconnect();
-    });
-
-  c1.ping();
-  break;
-
 case 'status':
   var c2 = getChromecast();
-  c2
-    .once('status', function(status) {
-      console.log('Status received:', util.inspect(status));
-      c2.disconnect();
-    });
-  c2.status();
+  c2.status(function(err, status) {
+    if (err) {
+      logger.error('Unable to get status:', err.message);
+    } else {
+      logger.info('Status received:', status);
+    }
+    c2.stop();
+  });
   break;
 
 case 'watch':
   var c3 = getChromecast();
   if (args.app) {
-    c3.status();
-    c3.once('status', function(status) {
-      if (status.applications.length === 0) {
-        console.log('No application running');
-        c3.disconnect();
-      } else {
-        var app = _.find(status.applications, { appId: args.app });
-        if (typeof app === 'undefined') {
-          console.log('Application not found');
-          c3.disconnect();
-        } else {
-          c3.stream.write({
-            namespace: 'urn:x-cast:com.google.cast.tp.connection',
-            destination: app.transportId,
-            data: { type: 'CONNECT',
-                    origin: {} }
-          });
-          c3.status();
-        }
+    c3.application(args.app, function(err, app) {
+      if (err) {
+        logger.error('Unable to get application:', err.message);
+        c3.stop();
+        return;
       }
+      app.run(null, function(err, session) {
+        if (err) {
+          logger.error('Unable to start application:', err.message);
+          c3.stop();
+          return;
+        }
+        session.on('message', function(message) {
+          logger.info('Session message received:', message);
+        });
+      });
+    });
+  } else {
+    c3.on('message', function(message) {
+      logger.info('Message received:', message);
     });
   }
-  c3
-    .on('message', function(message) {
-      console.log('Message received:', util.inspect(message, { depth: null }));
-    });
   break;
 
 case 'run':
   var c4 = getChromecast();
-  c4.run(args.app);
-  c4.disconnect();
+  c4.application(args.app, function(err, app) {
+    if (err) {
+      logger.error('Unable to get application:', err.message);
+      c4.stop();
+    } else {
+      app.run(args.namespace, function(err, session) {
+        if (err) {
+          logger.error('Unable to start application:', err.message);
+        } else {
+          session.stop();
+        }
+        c4.stop();
+      });
+    }
+  });
   break;
 
 }
