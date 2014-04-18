@@ -228,7 +228,29 @@ var subcommands = {
           return;
         }
         app.join(namespace, function(err, session) {
+          if (err) {
+            logger.error('Unable to find a running session:', err.message);
+            c.stop();
+            return;
+          }
           logger.info('Found the game!');
+
+          function play() {
+            // Which moves are available?
+            var next = _.filter(_.shuffle(_.map(board, function(v, idx) {
+              if (v === 0) return idx;
+              return null;
+            })), null)[0];
+            var row = next % 3,
+                col = Math.floor(next / 3);
+            logger.info('I will move to:', row, col);
+            session.send({
+              command: 'move',
+              row: row,
+              column: col
+            });
+          }
+
           session.on('message', function(message) {
             switch (message.event) {
             case 'error':
@@ -242,6 +264,7 @@ var subcommands = {
               break;
             case 'board_layout_response':
               board = message.board;
+              if (player === 'X') play();
               break;
             case 'moved':
               if (message.game_over) {
@@ -249,24 +272,12 @@ var subcommands = {
                 c.stop();
                 break;
               }
+              board[message.row + message.column*3] = message.player;
               if (message.player === player) {
                 // It's us, do nothing
                 break;
               };
-              board[message.row + message.column*3] = message.player;
-              // Which moves are available?
-              var next = _.filter(_.shuffle(_.map(board, function(v, idx) {
-                if (v === 0) return idx;
-                return null;
-              })), null)[0];
-              var row = next % 3,
-                  col = Math.floor(next / 3);
-              logger.info('I will move to:', row, col);
-              session.send({
-                command: 'move',
-                row: row,
-                column: col
-              });
+              play();
               break;
             }
           });
