@@ -120,8 +120,15 @@ var subcommands = {
           });
         });
       } else {
-        c.on('message', function(message) {
-          logger.info('Message received:', message);
+        c.status(function(err, status) {
+          if (err) {
+            logger.error('Unable to query status:', err.message);
+            c.stop();
+            return;
+          }
+          c.on('message', function(message) {
+            logger.info('Message received:', message);
+          });
         });
       }
     };
