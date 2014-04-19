@@ -294,6 +294,40 @@ var subcommands = {
         });
       });
     };
+  })(),
+
+  // Run dashkiosk application with a given URL
+  dashkiosk: (function() {
+    var dashkiosk = subparsers.addParser('dashkiosk', {
+      help: 'run Dashkiosk receiver',
+      description: 'execute dashkiosk receiver with the given URL'
+    });
+    addHostAndPort(dashkiosk);
+    dashkiosk.addArgument(['url'], {
+      help: 'receiver URL',
+      metavar: 'URL'
+    });
+
+    return function(args) {
+      var c = getChromecast(),
+          applicationID = '5E7A2C2C',
+          namespace = 'urn:x-cast:com.deezer.cast.dashkiosk';
+      c.application(applicationID, function(err, app) {
+        if (err) {
+          logger.error('Unable to find Dashkiosk application:', err.message);
+          c.stop();
+          return;
+        }
+        app.run(namespace, function(err, session) {
+          if (err) {
+            logger.error('Unable to execute Dashkiosk application:', err.message);
+            c.stop();
+            return;
+          }
+          session.send({ url: args.url });
+        });
+      });
+    };
   })()
 };
 
