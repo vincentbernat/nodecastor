@@ -135,6 +135,31 @@ var c = new CastDevice({
 });
 ```
 
+By default, reconnection is tried on disconnect. Both `Scanner` and
+`CastDevice` constructors accept a `reconnect` object as an
+options. When set to `false`, no reconnection will be retried:
+
+```javascript
+var c = new CastDevice({
+  address: '192.168.1.27',
+  reconnect: false
+});
+```
+
+Otherwise, the provided object may contain some properties to
+influence the reconnection:
+
+```javascript
+var c = new CastDevice({
+  address: '192.168.1.27',
+  reconnect: {
+    maxRetries: 10,
+    maxDelay: 10000, // ms
+    initialDelay: 100 // ms
+  }
+});
+```
+
 ## Command-line helper
 
 The functionality of this library can be tested with the `chromecast`

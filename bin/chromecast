@@ -356,15 +356,16 @@ var logger = new winston.Logger({
 function getChromecast() {
   var c = new nodecastor.CastDevice({ address: args.host,
                                       port: args.port,
-                                      logger: logger });
+                                      logger: logger,
+                                      reconnect: false });
   c
     .once('error', function(err) {
-      logger.warn('Error received:', err);
-      process.exit(1);
+      logger.warn('Error received:', err.message);
+      // process.exit(1);
     })
     .once('disconnect', function() {
       logger.warn('Got disconnected from device');
-      process.exit(0);
+      // process.exit(0);
     });
   return c;
 }
