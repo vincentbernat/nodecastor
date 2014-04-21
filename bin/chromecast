@@ -343,6 +343,7 @@ var subcommands = {
               return;
             }
             session.send({ url: args.url });
+            c.stop();
           });
         });
       });
