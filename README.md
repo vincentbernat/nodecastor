@@ -37,9 +37,9 @@ nodecastor.scan()
   })
   .on('offline', function(d) {
     console.log('Removed device', util.inspect(d));
-  });
+  })
+  .start();
 ```
-
 
 On Linux, if no device is discovered, first check that your machine is
 able to do mDNS address resolution. The library used for this purpose
