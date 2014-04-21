@@ -75,13 +75,15 @@ var subcommands = {
 
     return function(args) {
       var c = getChromecast();
-      c.status(function(err, status) {
-        if (err) {
-          logger.error('Unable to get status:', err.message);
-        } else {
-          logger.info('Status received:', status);
-        }
-        c.stop();
+      c.on('connect', function() {
+        c.status(function(err, status) {
+          if (err) {
+            logger.error('Unable to get status:', err.message);
+          } else {
+            logger.info('Status received:', status);
+          }
+          c.stop();
+        });
       });
     };
   })(),
@@ -101,36 +103,38 @@ var subcommands = {
 
     return function(args) {
       var c = getChromecast();
-      if (args.app) {
-        c.application(args.app, function(err, app) {
-          if (err) {
-            logger.error('Unable to get application:', err.message);
-            c.stop();
-            return;
-          }
-          app.run(null, function(err, session) {
+      c.on('connect', function() {
+        if (args.app) {
+          c.application(args.app, function(err, app) {
             if (err) {
-              logger.error('Unable to start application:', err.message);
+              logger.error('Unable to get application:', err.message);
               c.stop();
               return;
             }
-            session.on('message', function(message) {
-              logger.info('Session message received:', message);
+            app.run(null, function(err, session) {
+              if (err) {
+                logger.error('Unable to start application:', err.message);
+                c.stop();
+                return;
+              }
+              session.on('message', function(message) {
+                logger.info('Session message received:', message);
+              });
             });
           });
-        });
-      } else {
-        c.status(function(err, status) {
-          if (err) {
-            logger.error('Unable to query status:', err.message);
-            c.stop();
-            return;
-          }
-          c.on('message', function(message) {
-            logger.info('Message received:', message);
+        } else {
+          c.status(function(err, status) {
+            if (err) {
+              logger.error('Unable to query status:', err.message);
+              c.stop();
+              return;
+            }
+            c.on('message', function(message) {
+              logger.info('Message received:', message);
+            });
           });
-        });
-      }
+        }
+      });
     };
   })(),
 
@@ -152,25 +156,27 @@ var subcommands = {
 
     return function(args) {
       var c = getChromecast();
-      c.application(args.app, function(err, app) {
-        if (err) {
-          logger.error('Unable to get application:', err.message);
-          c.stop();
-        } else {
-          if (args.namespace) {
-            app.run(args.namespace, function(err, session) {
-              if (err) {
-                logger.error('Unable to start application:', err.message);
-              } else {
-                session.stop();
-              }
-              c.stop();
-            });
-          } else {
-            app.run(null);
+      c.on('connect', function() {
+        c.application(args.app, function(err, app) {
+          if (err) {
+            logger.error('Unable to get application:', err.message);
             c.stop();
+          } else {
+            if (args.namespace) {
+              app.run(args.namespace, function(err, session) {
+                if (err) {
+                  logger.error('Unable to start application:', err.message);
+                } else {
+                  session.stop();
+                }
+                c.stop();
+              });
+            } else {
+              app.run(null);
+              c.stop();
+            }
           }
-        }
+        });
       });
     };
   })(),
@@ -192,30 +198,32 @@ var subcommands = {
       var c = getChromecast();
       var applicationID = '794B7BBF';
       var namespace = 'urn:x-cast:com.google.cast.sample.helloworld';
-      c.application(applicationID, function(err, app) {
-        if (err) {
-          logger.error('Unable to find HelloText application:', err.message);
-          c.stop();
-        } else {
-          app.run(namespace, function(err, session) {
-            if (err) {
-              logger.error('Unable to start HelloText application:', err.message);
-              c.stop();
-            } else {
-              session.send(args.text.join(' '), function(err, message) {
-                if (err) {
-                  logger.error('Unable to send hello message:', err.message);
-                  c.stop();
-                } else {
-                  logger.info('Message delivered:', message);
-                  setTimeout(function() {
+      c.on('connect', function() {
+        c.application(applicationID, function(err, app) {
+          if (err) {
+            logger.error('Unable to find HelloText application:', err.message);
+            c.stop();
+          } else {
+            app.run(namespace, function(err, session) {
+              if (err) {
+                logger.error('Unable to start HelloText application:', err.message);
+                c.stop();
+              } else {
+                session.send(args.text.join(' '), function(err, message) {
+                  if (err) {
+                    logger.error('Unable to send hello message:', err.message);
                     c.stop();
-                  }, 10000);
-                }
-              });
-            }
-          });
-        }
+                  } else {
+                    logger.info('Message delivered:', message);
+                    setTimeout(function() {
+                      c.stop();
+                    }, 10000);
+                  }
+                });
+              }
+            });
+          }
+        });
       });
     };
   })(),
@@ -231,72 +239,74 @@ var subcommands = {
     return function(args) {
       var c = getChromecast(),
           applicationID = 'BFEBD3F1',
-          namespace = 'urn:x-cast:com.google.cast.demo.tictactoe',
-          board = [],
-          player;
-      c.application(applicationID, function(err, app) {
-        if (err) {
-          logger.error('Unable to find TicTacToe application:', err.message);
-          c.stop();
-          return;
-        }
-        app.join(namespace, function(err, session) {
+          namespace = 'urn:x-cast:com.google.cast.demo.tictactoe';
+      c.on('connect', function() {
+        var board = [],
+            player;
+        c.application(applicationID, function(err, app) {
           if (err) {
-            logger.error('Unable to find a running session:', err.message);
+            logger.error('Unable to find TicTacToe application:', err.message);
             c.stop();
             return;
           }
-          logger.info('Found the game!');
-
-          function play() {
-            // Which moves are available?
-            var next = _.filter(_.shuffle(_.map(board, function(v, idx) {
-              if (v === 0) return idx;
-              return null;
-            })), null)[0];
-            var row = next % 3,
-                col = Math.floor(next / 3);
-            logger.info('I will move to:', row, col);
-            session.send({
-              command: 'move',
-              row: row,
-              column: col
-            });
-          }
-
-          session.on('message', function(message) {
-            switch (message.event) {
-            case 'error':
-              logger.error('An error occurred:', message.message);
+          app.join(namespace, function(err, session) {
+            if (err) {
+              logger.error('Unable to find a running session:', err.message);
               c.stop();
-              break;
-            case 'joined':
-              // Get the layout
-              player = message.player;
-              session.send({ command: 'board_layout_request' });
-              break;
-            case 'board_layout_response':
-              board = message.board;
-              if (player === 'X') play();
-              break;
-            case 'moved':
-              if (message.game_over) {
-                logger.info('Game is over.');
+              return;
+            }
+            logger.info('Found the game!');
+
+            function play() {
+              // Which moves are available?
+              var next = _.filter(_.shuffle(_.map(board, function(v, idx) {
+                if (v === 0) return idx;
+                return null;
+              })), null)[0];
+              var row = next % 3,
+                  col = Math.floor(next / 3);
+              logger.info('I will move to:', row, col);
+              session.send({
+                command: 'move',
+                row: row,
+                column: col
+              });
+            }
+
+            session.on('message', function(message) {
+              switch (message.event) {
+              case 'error':
+                logger.error('An error occurred:', message.message);
                 c.stop();
                 break;
-              }
-              board[message.row + message.column*3] = message.player;
-              if (message.player === player) {
-                // It's us, do nothing
+              case 'joined':
+                // Get the layout
+                player = message.player;
+                session.send({ command: 'board_layout_request' });
                 break;
-              };
-              play();
-              break;
-            }
-          });
-          session.send({
-            command: 'join',
-            name: 'nodecastor'
+              case 'board_layout_response':
+                board = message.board;
+                if (player === 'X') play();
+                break;
+              case 'moved':
+                if (message.game_over) {
+                  logger.info('Game is over.');
+                  c.stop();
+                  break;
+                }
+                board[message.row + message.column*3] = message.player;
+                if (message.player === player) {
+                  // It's us, do nothing
+                  break;
+                };
+                play();
+                break;
+              }
+            });
+            session.send({
+              command: 'join',
+              name: 'nodecastor'
+            });
           });
         });
       });
@@ -319,19 +329,21 @@ var subcommands = {
       var c = getChromecast(),
           applicationID = '5E7A2C2C',
           namespace = 'urn:x-cast:com.deezer.cast.dashkiosk';
-      c.application(applicationID, function(err, app) {
-        if (err) {
-          logger.error('Unable to find Dashkiosk application:', err.message);
-          c.stop();
-          return;
-        }
-        app.run(namespace, function(err, session) {
+      c.on('connect', function() {
+        c.application(applicationID, function(err, app) {
           if (err) {
-            logger.error('Unable to execute Dashkiosk application:', err.message);
+            logger.error('Unable to find Dashkiosk application:', err.message);
             c.stop();
             return;
           }
-          session.send({ url: args.url });
+          app.run(namespace, function(err, session) {
+            if (err) {
+              logger.error('Unable to execute Dashkiosk application:', err.message);
+              c.stop();
+              return;
+            }
+            session.send({ url: args.url });
+          });
         });
       });
     };
@@ -359,13 +371,11 @@ function getChromecast() {
                                       logger: logger,
                                       reconnect: false });
   c
-    .once('error', function(err) {
+    .on('error', function(err) {
       logger.warn('Error received:', err.message);
-      // process.exit(1);
     })
-    .once('disconnect', function() {
+    .on('disconnect', function() {
       logger.warn('Got disconnected from device');
-      // process.exit(0);
     });
   return c;
 }

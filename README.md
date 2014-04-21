@@ -59,14 +59,16 @@ nodecastor.CastDevice({
 });
 ```
 
-Once you have a `CastDevice` instance, you can request some
-informations about it:
+Once you have a `CastDevice` instance, you need to wait for the
+connection event. Then, you can request some informations about it:
 
 ```javascript
-d.status(function(err, s) {
-  if (!err) {
-    console.log('Chromecast status', util.inspect(s));
-  }
+d.on('connect', function() {
+  d.status(function(err, s) {
+    if (!err) {
+      console.log('Chromecast status', util.inspect(s));
+    }
+  });
 });
 ```
 
@@ -123,8 +125,7 @@ A `CastSession` object can emit a `close` event when the connection is
 closed. A `CastDevice` object can emit a `disconnect` event when the
 connection with the device is lost and a `connect` event when the
 connection has been established (but there is no need to wait for such
-an event). You can stop a session with `.stop()` or close connection
-to a device with `.stop()`.
+an event). You can close connection to a device with `.stop()`.
 
 Any object can take as an option a logger. For example:
 
@@ -178,9 +179,9 @@ play against a human player. Here is how to use it:
 # Protocol description
 
 There is no formal description of the protocol. However, you can look
-at `channel.js` which shows how to build low-level messages, layer by
-layer. The lower-level protocol is implemented directly in Chrome and
-the protocol is described in `cast_channel.proto`.
+at `channel.js` which shows how to build low-level messages. The
+lower-level protocol is implemented directly in Chrome and the
+protocol is described in `cast_channel.proto`.
 
 The high-level protocol, used by the Chromecast extension, can be
 discovered by modifying the extension. The following code can be
