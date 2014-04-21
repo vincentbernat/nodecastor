@@ -73,6 +73,15 @@ d.on('connect', function() {
 });
 ```
 
+You can get updated when the status of the Chromecast changes by
+listening to the `status` event:
+
+```javascript
+d.on('status', function(status) {
+  console.log('Chromecast status updated', util.inspect(status));
+});
+```
+
 You can also request an application. This will give you a
 `CastApplication` instance.
 
