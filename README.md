@@ -4,11 +4,12 @@ This library is an experiment to provide a sender API for Google
 Chromecast devices using mDNS and some TLS protobuf protocol instead
 of the DIAL discovery protocol. Google
 [recently switched away from DIAL][1]. While SSDP/DIAL support is
-still present, existing applications have to migrate to the new SDK
-using the new protocol.
+still present and some applications are still using it (like YouTube),
+existing applications have to migrate to the new SDK using the new
+protocol.
 
-This library doesn't support the DIAL discovery protocol. See
-[nodecast][] instead.
+This library doesn't support DIAL/SSDP (and hence the applications
+relying on it). See [nodecast][] instead.
 
 [1]: https://plus.google.com/+SebastianMauer/posts/83hTniKEDwN
 [nodecast]: https://github.com/wearefractal/nodecast
