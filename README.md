@@ -176,6 +176,10 @@ play against a human player. Here is how to use it:
  4. Starts `chromecast tictactoe 192.168.1.24`.
  5. On Chrome, click play.
 
+The Dashkiosk application is a test for the [Dashkiosk project][].
+
+[Dashkiosk project]: https://github.com/vincentbernat/dashkiosk
+
 # Protocol description
 
 There is no formal description of the protocol. However, you can look
