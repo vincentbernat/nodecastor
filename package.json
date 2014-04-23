@@ -1,6 +1,6 @@
 {
   "name": "nodecastor",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Node interface to ChromeCast",
   "main": "index.js",
   "repository": {
