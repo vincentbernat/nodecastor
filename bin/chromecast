@@ -24,6 +24,8 @@ var subparsers = parser.addSubparsers({
   dest: 'command'
 });
 
+// Helper for all commands requesting a Chromecast and an optional
+// port
 function addHostAndPort(item) {
   item
     .addArgument(['host'], {
@@ -36,6 +38,38 @@ function addHostAndPort(item) {
       metavar: 'PORT',
       defaultValue: 8009
     });
+}
+
+// Helper for commands just sending a remote URL on some namespace for some appID
+function launchUrl(name, parserOptions, applicationID, namespace) {
+  var parser = subparsers.addParser(name, parserOptions);
+    addHostAndPort(parser);
+    parser.addArgument(['url'], {
+      help: 'receiver URL',
+      metavar: 'URL'
+    });
+
+    return function(args) {
+      var c = getChromecast();
+      c.on('connect', function() {
+        c.application(applicationID, function(err, app) {
+          if (err) {
+            logger.error('Unable to find application:', err.message);
+            c.stop();
+            return;
+          }
+          app.run(namespace, function(err, session) {
+            if (err) {
+              logger.error('Unable to execute application:', err.message);
+              c.stop();
+              return;
+            }
+            session.send({ url: args.url });
+            c.stop();
+          });
+        });
+      });
+    };
 }
 
 var subcommands = {
@@ -314,41 +348,16 @@ var subcommands = {
   })(),
 
   // Run dashkiosk application with a given URL
-  dashkiosk: (function() {
-    var dashkiosk = subparsers.addParser('dashkiosk', {
-      help: 'run Dashkiosk receiver',
-      description: 'execute dashkiosk receiver with the given URL'
-    });
-    addHostAndPort(dashkiosk);
-    dashkiosk.addArgument(['url'], {
-      help: 'receiver URL',
-      metavar: 'URL'
-    });
+  dashkiosk: launchUrl('dashkiosk', {
+    help: 'run Dashkiosk receiver',
+    description: 'execute Dashkiosk receiver with the given URL'
+  }, '5E7A2C2C', 'urn:x-cast:com.deezer.cast.dashkiosk'),
 
-    return function(args) {
-      var c = getChromecast(),
-          applicationID = '5E7A2C2C',
-          namespace = 'urn:x-cast:com.deezer.cast.dashkiosk';
-      c.on('connect', function() {
-        c.application(applicationID, function(err, app) {
-          if (err) {
-            logger.error('Unable to find Dashkiosk application:', err.message);
-            c.stop();
-            return;
-          }
-          app.run(namespace, function(err, session) {
-            if (err) {
-              logger.error('Unable to execute Dashkiosk application:', err.message);
-              c.stop();
-              return;
-            }
-            session.send({ url: args.url });
-            c.stop();
-          });
-        });
-      });
-    };
-  })()
+  vlc: launchUrl('vlc', {
+    help: 'run VLC receiver',
+    desvription: 'execute VLC receiver with the given URL'
+  }, '6E0BEF82', 'urn:x-cast:org.videolan.cast.receiver')
+
 };
 
 var args = parser.parseArgs();
