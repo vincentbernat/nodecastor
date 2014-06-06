@@ -53,7 +53,7 @@ Both `online` and `offline` events will invoke the callback with a
 manually:
 
 ```javascript
-nodecastor.CastDevice({
+new nodecastor.CastDevice({
       friendlyName: 'My secret Chromecast',
       address: '192.168.1.27',
       port: 8009
