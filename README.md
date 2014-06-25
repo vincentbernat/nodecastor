@@ -218,3 +218,10 @@ connect/disconnect to a Chromecast. Then, filter the log messages with
 `TAP CHROMECAST` in Chrome developper tools (click on
 `background.html` for the Chromecast extension in
 `chrome://extensions`).
+
+# Alternatives
+
+As an alternative, you can look at [castv2-client][] which also
+provides a media player implementation.
+
+[castv2-client]: https://github.com/thibauts/node-castv2-client
