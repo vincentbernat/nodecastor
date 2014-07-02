@@ -221,7 +221,9 @@ connect/disconnect to a Chromecast. Then, filter the log messages with
 
 # Alternatives
 
-As an alternative, you can look at [castv2-client][] which also
-provides a media player implementation.
+ - [castv2-client][] is another Javascript implementation which also
+   provides a media player implementation.
+ - [ChromeCast Java API v2][] is a Java implementation.
 
 [castv2-client]: https://github.com/thibauts/node-castv2-client
+[ChromeCast Java API v2]: https://github.com/vitalidze/chromecast-java-api-v2
