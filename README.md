@@ -18,6 +18,8 @@ relying on it). See [nodecast][] instead.
 
 Install the library with `npm install nodecastor`.
 
+You may need this on Ubuntu ```sudo apt-get install libavahi-compat-libdnssd-dev```.
+
 # Usage
 
 This is still a work in progress. The API is not stable, the quality
@@ -30,6 +32,7 @@ are available on the network. This is an optional step as you can also
 declare a Chromecast manually from its IP address.
 
 ```javascript
+var util = require('util');
 var nodecastor = require('nodecastor');
 nodecastor.scan()
   .on('online', function(d) {
