@@ -149,7 +149,7 @@ an event). You can close connection to a device with `.stop()`.
 Any object can take as an option a logger. For example:
 
 ```js
-var c = new CastDevice({
+const c = new CastDevice({
   address: '192.168.1.27',
   logger: console
 });
@@ -160,7 +160,7 @@ By default, reconnection is tried on disconnect. Both `Scanner` and
 options. When set to `false`, no reconnection will be retried:
 
 ```js
-var c = new CastDevice({
+const c = new CastDevice({
   address: '192.168.1.27',
   reconnect: false
 });
@@ -170,7 +170,7 @@ Otherwise, the provided object may contain some properties to
 influence the reconnection:
 
 ```js
-var c = new CastDevice({
+const c = new CastDevice({
   address: '192.168.1.27',
   reconnect: {
     maxRetries: 10,
