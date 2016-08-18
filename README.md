@@ -16,9 +16,14 @@ relying on it). See [nodecast][] instead.
 
 # Install
 
-Install the library with `npm install nodecastor`.
+```bash
+npm install nodecastor --save
+```
 
-You may need this on Ubuntu ```sudo apt-get install libavahi-compat-libdnssd-dev```.
+You may need this on Ubuntu:
+```bash
+sudo apt-get install libavahi-compat-libdnssd-dev
+```
 
 # Usage
 
@@ -31,15 +36,16 @@ To use the library, you first need to discover what Chromecast devices
 are available on the network. This is an optional step as you can also
 declare a Chromecast manually from its IP address.
 
-```javascript
-var util = require('util');
-var nodecastor = require('nodecastor');
+```js
+const util = require('util');
+const nodecastor = require('nodecastor');
+
 nodecastor.scan()
-  .on('online', function(d) {
-    console.log('New device', util.inspect(d));
+  .on('online', device => {
+    console.log('New device', util.inspect(device));
   })
-  .on('offline', function(d) {
-    console.log('Removed device', util.inspect(d));
+  .on('offline', device => {
+    console.log('Removed device', util.inspect(device));
   })
   .start();
 ```
@@ -55,20 +61,20 @@ Both `online` and `offline` events will invoke the callback with a
 `CastDevice` instance. You can also create the `CastDevice` instance
 manually:
 
-```javascript
+```js
 new nodecastor.CastDevice({
-      friendlyName: 'My secret Chromecast',
-      address: '192.168.1.27',
-      port: 8009
+  friendlyName: 'My secret Chromecast',
+  address: '192.168.1.27',
+  port: 8009
 });
 ```
 
 Once you have a `CastDevice` instance, you need to wait for the
 connection event. Then, you can request some informations about it:
 
-```javascript
-d.on('connect', function() {
-  d.status(function(err, s) {
+```js
+d.on('connect', () => {
+  d.status((err, s) => {
     if (!err) {
       console.log('Chromecast status', util.inspect(s));
     }
@@ -79,8 +85,8 @@ d.on('connect', function() {
 You can get updated when the status of the Chromecast changes by
 listening to the `status` event:
 
-```javascript
-d.on('status', function(status) {
+```js
+d.on('status', status => {
   console.log('Chromecast status updated', util.inspect(status));
 });
 ```
@@ -88,8 +94,8 @@ d.on('status', function(status) {
 You can also request an application. This will give you a
 `CastApplication` instance.
 
-```javascript
-d.application('YouTube', function(err, a) {
+```js
+d.application('YouTube', (err, a) => {
   if (!err) {
     console.log('YouTube application', util.inspect(a));
   }
@@ -101,13 +107,13 @@ Once you have a `CastApplication` instance, you can request a
 join an existing application (which should already be running) or you
 can run a new instance.
 
-```javascript
-a.run('urn:x-cast:com.google.cast.demo.tictactoe', function(err, s) {
+```js
+a.run('urn:x-cast:com.google.cast.demo.tictactoe', (err, s) => {
   if (!err) {
     console.log('Got a session', util.inspect(s));
   }
 });
-a.join('urn:x-cast:com.google.cast.demo.tictactoe', function(err, s) {
+a.join('urn:x-cast:com.google.cast.demo.tictactoe', (err, s) => {
   if (!err) {
     console.log('Joined a session', util.inspect(s));
   }
@@ -120,13 +126,13 @@ messages sent on this session will use the given namespace.
 You can then send messages and receive answers (not all messages have
 to be answered):
 
-```javascript
-s.send({ data: 'hello' }, function(err, data) {
+```js
+s.send({ data: 'hello' }, (err, data) => {
   if (!err) {
     console.log('Got an answer!', util.inspect(data));
   }
 });
-s.on('message', function(data) {
+s.on('message', data => {
   console.log('Got an unexpected message', util.inspect(data));
 });
 ```
@@ -142,8 +148,8 @@ an event). You can close connection to a device with `.stop()`.
 
 Any object can take as an option a logger. For example:
 
-```javascript
-var c = new CastDevice({
+```js
+const c = new CastDevice({
   address: '192.168.1.27',
   logger: console
 });
@@ -153,8 +159,8 @@ By default, reconnection is tried on disconnect. Both `Scanner` and
 `CastDevice` constructors accept a `reconnect` object as an
 options. When set to `false`, no reconnection will be retried:
 
-```javascript
-var c = new CastDevice({
+```js
+const c = new CastDevice({
   address: '192.168.1.27',
   reconnect: false
 });
@@ -163,8 +169,8 @@ var c = new CastDevice({
 Otherwise, the provided object may contain some properties to
 influence the reconnection:
 
-```javascript
-var c = new CastDevice({
+```js
+const c = new CastDevice({
   address: '192.168.1.27',
   reconnect: {
     maxRetries: 10,
@@ -204,12 +210,12 @@ The high-level protocol, used by the Chromecast extension, can be
 discovered by modifying the extension. The following code can be
 appended to `background_script.js`:
 
-```javascript
-chromesendAndLog = function(channel, data) {
+```js
+chromesendAndLog = (channel, data) => {
   console.log('[TAP CHROMECAST send]', data);
   return chrome.cast.channel.send.apply(chrome.cast.channel, arguments);
 };
-chrome.cast.channel.onMessage.addListener(function(channel, data) {
+chrome.cast.channel.onMessage.addListener((channel, data) => {
   console.log('[TAP CHROMECAST recv]', data);
 });
 ```
