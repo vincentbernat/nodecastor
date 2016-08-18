@@ -2,9 +2,9 @@
 
 This library is an experiment to provide a sender API for Google
 Chromecast devices using mDNS and some TLS protobuf protocol instead
-of the DIAL discovery protocol. Google
-[recently switched away from DIAL][1]. While SSDP/DIAL support is
-still present and some applications are still using it (like YouTube),
+of the DIAL discovery protocol. Early Chromecasts made use of DIAL but
+Google [switched away from it][1]. While SSDP/DIAL support is still
+present and some applications are still using it (like YouTube),
 existing applications have to migrate to the new SDK using the new
 protocol.
 
