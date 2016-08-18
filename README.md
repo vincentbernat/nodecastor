@@ -1,7 +1,6 @@
 Nodecastor
 ==========
 
-[![NPM version](https://badge.fury.io/js/nodecastor.png)](http://badge.fury.io/js/nodecastor)
 [![NPM version](https://badge.fury.io/js/nodecastor.svg)](http://badge.fury.io/js/nodecastor)
 [![Dependency Status](https://img.shields.io/david/vincentbernat/nodecastor.svg)](https://david-dm.org/vincentbernat/nodecastor)
 [![npm](https://img.shields.io/npm/dm/nodecastor.svg?maxAge=2592000)]()
