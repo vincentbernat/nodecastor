@@ -18,11 +18,11 @@
   },
   "dependencies": {
     "argparse": "^0.1.15",
-    "protobufjs": "^2.0.5",
-    "mdns": "^2.2.2",
+    "backoff": "^2.3.0",
     "lodash": "^2.4.1",
-    "winston": "^0.7.3",
-    "backoff": "^2.3.0"
+    "mdns": "^2.2.2",
+    "protobufjs": "^2.0.5",
+    "winston": "^3.2.1"
   },
   "bin": {
     "chromecast": "./bin/chromecast"

@@ -13,6 +13,7 @@ var util = require('util'),
       version: pjson.version,
       description: 'Discover and interact with Google Chromecast devices.'
     });
+const { LEVEL, MESSAGE, SPLAT } = require('triple-beam');
 
 parser
   .addArgument(['-d', '--debug'], {
@@ -362,15 +363,44 @@ var subcommands = {
 
 var args = parser.parseArgs();
 
+const myFormat = winston.format((info) => {
+  const extras = Object.assign({}, info, {
+    level: undefined,
+    message: undefined,
+    splat: undefined,
+  });
+
+  delete extras[LEVEL];
+  delete extras[MESSAGE];
+  delete extras[SPLAT];
+
+  for (const k of Object.keys(extras)) {
+    if (extras[k] === undefined) {
+      delete extras[k];
+    } else {
+      delete info[k];
+    }
+  }
+
+  if (Object.keys(extras).length) {
+    info.message += '\n' + util.inspect(extras, false, null, true);
+  }
+
+  return info;
+});
+
 // Logging
-var logger = new winston.Logger({
+var logger = winston.createLogger({
+  level: args.debug?'debug':'info',
+  format: winston.format.combine(
+    winston.format.splat(),
+    winston.format.colorize(),
+    myFormat(),
+    winston.format.simple(),
+  ),
   transports: [
     new winston.transports.Console({
-      prettyPrint: true,
-      colorize: true,
-      silent: false,
-      timestamp: false,
-      level: args.debug?'debug':'info'
+      silent: false
     })
   ]
 });
