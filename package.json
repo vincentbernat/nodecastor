@@ -17,9 +17,9 @@
     "url": "https://github.com/vincentbernat/nodecastor/issues"
   },
   "dependencies": {
-    "argparse": "^0.1.15",
+    "argparse": "^1.0.10",
     "backoff": "^2.3.0",
-    "lodash": "^2.4.1",
+    "lodash": "^4.17.11",
     "mdns": "^2.2.2",
     "protobufjs": "^2.0.5",
     "winston": "^3.2.1"
