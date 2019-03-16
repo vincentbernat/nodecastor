@@ -17,12 +17,12 @@
     "url": "https://github.com/vincentbernat/nodecastor/issues"
   },
   "dependencies": {
-    "argparse": "^0.1.15",
-    "protobufjs": "^2.0.5",
+    "argparse": "^1.0.10",
+    "backoff": "^2.3.0",
+    "lodash": "^4.17.11",
     "mdns": "^2.2.2",
-    "lodash": "^2.4.1",
-    "winston": "^0.7.3",
-    "backoff": "^2.3.0"
+    "protobufjs": "^6.8.8",
+    "winston": "^3.2.1"
   },
   "bin": {
     "chromecast": "./bin/chromecast"
