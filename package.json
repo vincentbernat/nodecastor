@@ -21,7 +21,7 @@
     "backoff": "^2.3.0",
     "lodash": "^4.17.11",
     "mdns": "^2.2.2",
-    "protobufjs": "^2.0.5",
+    "protobufjs": "^6.8.8",
     "winston": "^3.2.1"
   },
   "bin": {
