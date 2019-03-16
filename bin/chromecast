@@ -364,6 +364,24 @@ var subcommands = {
 var args = parser.parseArgs();
 
 const myFormat = winston.format((info) => {
+
+  if (
+    info[SPLAT]
+    && info[SPLAT].length
+    && typeof info[SPLAT][0] === 'string'
+  ) {
+    // simple string arg case
+    info.message += ' ' + info[SPLAT].join(' ');
+
+    // this isn't 100% correct, but should cover our usage
+    for (let i = 0; i < info[SPLAT][0].length; ++i) {
+      delete info[i];
+    }
+
+    delete info[SPLAT];
+    return info;
+  }
+
   const extras = Object.assign({}, info, {
     level: undefined,
     message: undefined,
